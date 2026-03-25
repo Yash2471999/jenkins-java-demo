@@ -1,7 +1,9 @@
+// trigger build
 pipeline {
     agent any
     tools {
         maven 'Maven3'
+        allure 'Allure'
     }
     environment {
         APP_NAME = 'jenkins-java-demo'
@@ -29,7 +31,9 @@ pipeline {
             }
             post {
                 always {
-                    echo '📊 Test stage completed'
+                    allure includeProperties: false,
+                           jdk: '',
+                           results: [[path: 'target/allure-results']]
                 }
                 success {
                     echo '✅ All tests passed!'
