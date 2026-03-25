@@ -1,78 +1,65 @@
-// trigger build
+// staging branch pipeline
 pipeline {
     agent any
     tools {
         maven 'Maven3'
-        allure 'Allure'
     }
     environment {
-        APP_NAME = 'jenkins-java-demo'
-        VERSION  = '1.0.0'
-        REPO_URL = 'https://github.com/Yash2471999/jenkins-java-demo.git'
+        APP_NAME    = 'jenkins-java-demo'
+        BRANCH_NAME = 'staging'
+        DEPLOY_DIR  = '/tmp/jenkins-staging'
     }
     stages {
         stage('Checkout') {
             steps {
-                echo '📥 Pulling source code from GitHub...'
-                git branch: 'main',
+                echo '📥 Checking out STAGING branch...'
+                git branch: 'staging',
                     url: 'https://github.com/Yash2471999/jenkins-java-demo.git'
             }
         }
         stage('Build') {
             steps {
-                echo '🔨 Building the application...'
+                echo '🔨 Building STAGING version...'
                 sh 'mvn clean compile'
             }
         }
         stage('Test') {
             steps {
-                echo '🧪 Running unit tests...'
+                echo '🧪 Running tests on STAGING...'
                 sh 'mvn test'
             }
             post {
-                always {
-                    allure includeProperties: false,
-                           jdk: '',
-                           results: [[path: 'target/allure-results']]
-                }
-                success {
-                    echo '✅ All tests passed!'
-                }
-                failure {
-                    echo '❌ Some tests failed!'
-                }
+                success { echo '✅ STAGING tests passed!' }
+                failure { echo '❌ STAGING tests failed!' }
+            }
+        }
+        stage('Code Quality Check') {
+            steps {
+                echo '🔍 Running code quality checks...'
+                sh 'mvn verify -DskipTests'
             }
         }
         stage('Package') {
             steps {
-                echo '📦 Packaging the application...'
+                echo '📦 Packaging STAGING build...'
                 sh 'mvn package -DskipTests'
-                echo '✅ JAR file created!'
             }
         }
-        stage('Deploy') {
+        stage('Deploy to STAGING') {
             steps {
-                echo '🚀 Deploying the application...'
+                echo '🚀 Deploying to STAGING environment...'
                 sh '''
-                    mkdir -p /tmp/jenkins-deploy
-                    cp target/*.jar /tmp/jenkins-deploy/
-                    echo "✅ Deployed to /tmp/jenkins-deploy/"
-                    ls -la /tmp/jenkins-deploy/
-                    java -jar /tmp/jenkins-deploy/*.jar
+                    mkdir -p /tmp/jenkins-staging
+                    cp target/*.jar /tmp/jenkins-staging/
+                    echo "✅ Deployed to STAGING at /tmp/jenkins-staging/"
+                    ls -la /tmp/jenkins-staging/
                 '''
             }
         }
     }
     post {
-        success {
-            echo '🎉 Pipeline completed successfully!'
-        }
-        failure {
-            echo '❌ Pipeline failed! Check the logs.'
-        }
-        always {
-            echo '🧹 Cleaning up workspace...'
-            cleanWs()
-        }
+        success { echo '🎉 STAGING Pipeline completed successfully!' }
+        failure { echo '❌ STAGING Pipeline failed!' }
+        always  { cleanWs() }
     }
 }
