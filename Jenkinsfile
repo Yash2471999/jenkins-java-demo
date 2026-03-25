@@ -1,18 +1,14 @@
 pipeline {
     agent any
-
     tools {
         maven 'Maven3'
     }
-
     environment {
         APP_NAME = 'jenkins-java-demo'
         VERSION  = '1.0.0'
         REPO_URL = 'https://github.com/Yash2471999/jenkins-java-demo.git'
     }
-
     stages {
-
         stage('Checkout') {
             steps {
                 echo '📥 Pulling source code from GitHub...'
@@ -20,14 +16,12 @@ pipeline {
                     url: 'https://github.com/Yash2471999/jenkins-java-demo.git'
             }
         }
-
         stage('Build') {
             steps {
                 echo '🔨 Building the application...'
                 sh 'mvn clean compile'
             }
         }
-
         stage('Test') {
             steps {
                 echo '🧪 Running unit tests...'
@@ -45,7 +39,6 @@ pipeline {
                 }
             }
         }
-
         stage('Package') {
             steps {
                 echo '📦 Packaging the application...'
@@ -53,7 +46,6 @@ pipeline {
                 echo '✅ JAR file created!'
             }
         }
-
         stage('Deploy') {
             steps {
                 echo '🚀 Deploying the application...'
@@ -67,7 +59,6 @@ pipeline {
             }
         }
     }
-
     post {
         success {
             echo '🎉 Pipeline completed successfully!'
@@ -81,44 +72,3 @@ pipeline {
         }
     }
 }
-```
-
----
-
-## Step 2 — Push all files to GitHub
-
-Your repo structure should look like this:
-```
-jenkins-java-demo/
-├── src/
-│   ├── main/java/com/demo/Calculator.java
-│   └── test/java/com/demo/CalculatorTest.java
-├── pom.xml
-└── Jenkinsfile
-```
-
----
-
-## Step 3 — Configure Jenkins Pipeline
-
-1. Go to Jenkins → **New Item**
-2. Name it `jenkins-java-demo` → Select **Pipeline** → Click **OK**
-3. Scroll to **Pipeline** section
-4. Set **Definition** to `Pipeline script from SCM`
-5. Set **SCM** to `Git`
-6. Enter your repo URL:
-```
-https://github.com/<your-username>/jenkins-java-demo.git
-```
-7. Set **Branch** to `*/main`
-8. Set **Script Path** to `Jenkinsfile`
-9. Click **Save**
-
----
-
-## Step 4 — Run the Pipeline
-
-1. Click **Build Now**
-2. Watch all 5 stages turn green:
-```
-✅ Checkout → ✅ Build → ✅ Test → ✅ Package → ✅ Deploy
