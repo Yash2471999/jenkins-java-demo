@@ -53,20 +53,20 @@ pipeline {
             }
         }
         stage('Push to DockerHub') {
-            steps {
-                echo 'Pushing image to DockerHub...'
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-credentials',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                    sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
-                    sh "docker push ${DOCKER_IMAGE}:latest"
-                }
-                echo 'Image pushed to DockerHub!'
-            }
+    steps {
+        echo 'Pushing image to DockerHub...'
+        withCredentials([usernamePassword(
+            credentialsId: 'dockerhub-credentials',
+            usernameVariable: 'DOCKER_USER',
+            passwordVariable: 'DOCKER_PASS'
+        )]) {
+            sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
+            sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
+            sh "docker push ${DOCKER_IMAGE}:latest"
         }
+        echo 'Image pushed to DockerHub!'
+    }
+}
         stage('Deploy Container') {
             steps {
                 echo 'Deploying container...'
