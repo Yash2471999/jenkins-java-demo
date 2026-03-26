@@ -3,12 +3,12 @@ pipeline {
     agent any
     tools {
         maven 'Maven3'
-        allure 'Allure'
     }
     environment {
-        APP_NAME = 'jenkins-java-demo'
+        APP_NAME = 'calculator-app'
         VERSION  = '1.0.0'
-        REPO_URL = 'https://github.com/Yash2471999/jenkins-java-demo.git'
+        DOCKER_IMAGE = 'your-dockerhub-username/calculator-app'
+        DOCKER_TAG = "${BUILD_NUMBER}"
     }
     stages {
         stage('Checkout') {
@@ -30,11 +30,6 @@ pipeline {
                 sh 'mvn test'
             }
             post {
-                always {
-                    allure includeProperties: false,
-                           jdk: '',
-                           results: [[path: 'target/allure-results']]
-                }
                 success {
                     echo '✅ All tests passed!'
                 }
@@ -50,15 +45,41 @@ pipeline {
                 echo '✅ JAR file created!'
             }
         }
-        stage('Deploy') {
+        stage('Build Docker Image') {
             steps {
-                echo '🚀 Deploying the application...'
+                echo '🐳 Building Docker image...'
+                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
+                echo '✅ Docker image built!'
+            }
+        }
+        stage('Push to DockerHub') {
+            steps {
+                echo '📤 Pushing image to DockerHub...'
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                    sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                    sh "docker push ${DOCKER_IMAGE}:latest"
+                }
+                echo '✅ Image pushed to DockerHub!'
+            }
+        }
+        stage('Deploy Container') {
+            steps {
+                echo '🚀 Deploying container...'
                 sh '''
-                    mkdir -p /tmp/jenkins-deploy
-                    cp target/*.jar /tmp/jenkins-deploy/
-                    echo "✅ Deployed to /tmp/jenkins-deploy/"
-                    ls -la /tmp/jenkins-deploy/
-                    java -jar /tmp/jenkins-deploy/*.jar
+                    docker stop calculator-app || true
+                    docker rm calculator-app || true
+                    docker run -d \
+                        --name calculator-app \
+                        -p 9090:8080 \
+                        your-dockerhub-username/calculator-app:latest
+                    echo "✅ Container deployed!"
+                    docker ps
                 '''
             }
         }
@@ -76,3 +97,21 @@ pipeline {
         }
     }
 }
+```
+
+> ⚠️ Replace `your-dockerhub-username` with your actual DockerHub username in the Jenkinsfile!
+
+---
+
+## Step 7 — Open Port 9090 in AWS Security Group
+
+1. Go to **AWS Console → EC2 → Security Groups**
+2. Click **Edit inbound rules → Add rule**
+3. Set: **Port** = `9090`, **Source** = `0.0.0.0/0`
+4. Click **Save rules**
+
+---
+
+## Final Pipeline Stages:
+```
+✅ Checkout → ✅ Build → ✅ Test → ✅ Package → ✅ Docker Build → ✅ Push → ✅ Deploy
